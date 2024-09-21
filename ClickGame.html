@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button Clicking Game</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #2c2c2c; /* Dark gray background */
+            font-family: Arial, sans-serif;
+            color: #fff; /* White text */
+        }
+
+        #game-container {
+            position: relative;
+            width: 80vw;
+            height: 80vh;
+            border: 2px solid #444; /* Slightly lighter gray for the border */
+            background-color: #333;
+            overflow: hidden;
+            border-radius: 10px;
+        }
+
+        .click-button {
+            position: absolute;
+            padding: 10px 20px;
+            background-color: #f1c40f; /* Golden yellow */
+            color: #333;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.1s ease;
+        }
+
+        .click-button:hover {
+            transform: scale(1.1); /* Slight zoom on hover */
+        }
+
+        #score {
+            font-size: 24px;
+            margin-top: 20px;
+        }
+
+        #game-over {
+            font-size: 36px;
+            color: red;
+            display: none;
+        }
+
+        #reset-button {
+            display: none;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #f1c40f; /* Golden yellow */
+            color: #333;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #reset-button:hover {
+            transform: scale(1.1); /* Slight zoom on hover */
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container"></div>
+    <div id="score">Score: 0</div>
+    <div id="game-over">Game Over! Final Score: <span id="final-score"></span></div>
+    <button id="reset-button">Restart Game</button>
+
+    <script>
+        let score = 0;
+        let currentButton = null;
+        let gameOver = false;
+        const gameContainer = document.getElementById('game-container');
+        const scoreDisplay = document.getElementById('score');
+        const gameOverDisplay = document.getElementById('game-over');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const resetButton = document.getElementById('reset-button');
+
+        function createRandomButton() {
+            if (gameOver) return;
+
+            const button = document.createElement('button');
+            button.className = 'click-button';
+            button.textContent = 'Click Me';
+
+            // Random position within the game container
+            const maxX = gameContainer.offsetWidth - 100; // 100 to account for button width
+            const maxY = gameContainer.offsetHeight - 50; // 50 to account for button height
+            const randomX = Math.random() * maxX;
+            const randomY = Math.random() * maxY;
+            button.style.left = `${randomX}px`;
+            button.style.top = `${randomY}px`;
+
+            gameContainer.appendChild(button);
+
+            // Random timeout between 0.5 and 1 second
+            const timeout = Math.random() * 500 + 850;
+
+            // Set up the timeout for removing the button
+            const buttonTimeout = setTimeout(() => {
+                if (gameContainer.contains(button)) {
+                    endGame();
+                }
+            }, timeout);
+
+            // Handle button click
+            button.addEventListener('click', () => {
+                clearTimeout(buttonTimeout);
+                gameContainer.removeChild(button);
+                score++;
+                updateScore();
+                createRandomButton();
+            });
+
+            currentButton = button;
+        }
+
+        function updateScore() {
+            scoreDisplay.textContent = `Score: ${score}`;
+        }
+
+        function endGame() {
+            gameOver = true;
+            gameOverDisplay.style.display = 'block';
+            finalScoreDisplay.textContent = score;
+            if (currentButton) {
+                gameContainer.removeChild(currentButton);
+            }
+            resetButton.style.display = 'block';
+        }
+
+        function resetGame() {
+            score = 0;
+            gameOver = false;
+            updateScore();
+            gameOverDisplay.style.display = 'none';
+            resetButton.style.display = 'none';
+            createRandomButton();
+        }
+
+        // Start the game with the first button
+        createRandomButton();
+
+        // Reset button click handler
+        resetButton.addEventListener('click', resetGame);
+
+    </script>
+
+</body>
+</html>
