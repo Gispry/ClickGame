@@ -146,7 +146,21 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        const bannedWords = ["BadWord", "NoNoWord", "VeryBadWord"];
+        const bannedWords = [
+            "anal", "anus", "arse", "ass", "ballsack", "balls", "bastard", "bitch", "biatch", 
+            "bloody", "blowjob", "blow job", "bollock", "bollok", "boner", "boob", "bugger", 
+            "bum", "butt", "buttplug", "clitoris", "cock", "coon", "crap", "cunt", "damn", "dick",
+            "dildo", "dyke", "fag", "feck", "fellate", "fellatio", "felching", 
+            "fudgepacker", "fudge packer", "flange", "Goddamn", "God damn", "hell", "homo", "jerk",
+            "jizz", "knobend", "knob end", "labia", "muff", "nigger", "nigga", "penis", "piss", "poop",
+            "prick", "pube", "pussy", "queer", "scrotum", "sex", "slut", "spunk", "tit", "tosser", "turd", 
+            "twat", "vagina", "wank", "whore", "faggot", "tranny", "trannie", "transvestite", "simp", "incel",
+            "virgin", " Abbo ", " Abo ", "Buddhahead", "Bule", "Chinaman", "Ching chong", "Kill yourself", 
+            "kys", "Chinky", "Chow", "Cracker", "Grago", "Gragok", "Gringo", "neeger", "nigre", "nigar", 
+            "niggur", "niggah", "niggar", "nigguh", "niggress", "nigette", "negro", "neger", "Niggeritis",
+            "Negroitis", "Pajeet", "Paleface", "Turk", "Wigger", "Whigger", "Wigga", " Wog ", "porn", "hentai",
+            "pornogrophy", "playboy", "yuri", "Sissy", "twink", "war", 
+        ];
 
         // Minimum dimensions for the game container
         const minGameWidth = 600;
