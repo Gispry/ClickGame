@@ -268,6 +268,11 @@
         const finalScoreDisplay = document.getElementById('final-score');
         const resetButton = document.getElementById('reset-button');
 
+        let scoreMultiplier = 1;
+        let bonusButton = null;
+        let bonusActive = false;
+        let previousTensDigit = 0;
+
         function createRandomButton() {
             if (gameOver) return;
 
@@ -276,8 +281,7 @@
             button.className = 'click-button';
             button.textContent = 'Click Me';
             button.style.opacity = 1;
-
-            button.style.transitionDuration = `${clickTimeout}ms`;
+            button.style.transition = `opacity ${clickTimeout}ms linear`; // Add transition for smooth fade
 
             const maxX = gameContainer.offsetWidth - 100;
             const maxY = gameContainer.offsetHeight - 50;
@@ -288,36 +292,117 @@
 
             gameContainer.appendChild(button);
 
+            // Set up button fade-out after a brief delay
             setTimeout(() => {
-                button.style.opacity = 0.05;
+                button.style.opacity = 0.05; // Fades out the button
             }, 0);
 
+            // Timeout for button expiry
             const buttonTimeout = setTimeout(() => {
                 if (gameContainer.contains(button)) {
-                    endGame();
+                    endGame(); // Game ends if the "Click Me" button is not clicked
                 }
+                if (bonusButton && gameContainer.contains(bonusButton)) {
+                    gameContainer.removeChild(bonusButton); // Remove bonus if not clicked (doesn't end the game)
+                }
+                bonusActive = false; // Reset bonus state
             }, clickTimeout);
 
+            // Add click event for "Click Me" button
             button.addEventListener('click', () => {
                 clearTimeout(buttonTimeout);
                 gameContainer.removeChild(button);
-                score++;
+
+                // Apply the score multiplier based on bonusActive status
+                score += scoreMultiplier; // Score is incremented by the multiplier
+                
                 updateScore();
-                adjustDifficulty();
+                handleTensDigitChange();
+                bonusActive = false; // Reset bonus state
                 createRandomButton();
             });
 
             currentButton = button;
         }
 
-        function updateScore() {
-            scoreDisplay.textContent = `Score: ${score}`;
+        function createBonusButton() {
+            // Determine if this should be a MultiplyButton (20% chance)
+            const isMultiplyButton = Math.random() < 0.2;
+
+            bonusButton = document.createElement('button');
+            bonusButton.className = 'click-button';
+            
+            if (isMultiplyButton) {
+                // Multiply button: Doubles the score
+                bonusButton.textContent = 'x2 Score'; // Text for MultiplyButton
+                bonusButton.style.backgroundColor = '#e74c3c'; // Different color for MultiplyButton
+            } else {
+                // Regular bonus button: Increases multiplier
+                bonusButton.textContent = '+1 Multiplier'; // Text for regular bonus button
+                bonusButton.style.backgroundColor = '#3498db'; // Color for regular bonus button
+            }
+
+            bonusButton.style.opacity = 1;
+            bonusButton.style.transition = `opacity ${clickTimeout}ms linear`; // Add transition for smooth fade
+
+            const maxX = gameContainer.offsetWidth - 100;
+            const maxY = gameContainer.offsetHeight - 50;
+            const randomX = Math.random() * maxX;
+            const randomY = Math.random() * maxY;
+            bonusButton.style.left = `${randomX}px`;
+            bonusButton.style.top = `${randomY}px`;
+
+            gameContainer.appendChild(bonusButton);
+
+            // Set up bonus button fade-out after a brief delay
+            setTimeout(() => {
+                bonusButton.style.opacity = 0.05; // Fades out the bonus button
+            }, 0);
+
+            // Set up timeout for the bonus button
+            const bonusButtonTimeout = setTimeout(() => {
+                if (gameContainer.contains(bonusButton)) {
+                    gameContainer.removeChild(bonusButton); // Remove bonus button if not clicked in time
+                }
+            }, clickTimeout);
+
+            // Add click event for bonus/multiply button
+            bonusButton.addEventListener('click', () => {
+                clearTimeout(bonusButtonTimeout); // Prevent it from being removed automatically
+
+                if (isMultiplyButton) {
+                    // Multiply button clicked: Double the current score
+                    score *= 2;
+                } else {
+                    // Regular bonus button clicked: Increase multiplier
+                    scoreMultiplier++;  
+                }
+
+                updateScore();
+                gameContainer.removeChild(bonusButton); // Remove the button after it's clicked
+            });
         }
 
-        function adjustDifficulty() {
-            if (score % 10 === 0) {
+        function handleTensDigitChange() {
+            // Calculate the current tens digit based on the score
+            let currentTensDigit = Math.floor(score / 10);
+
+            // Check if the tens digit has increased since the last check
+            if (currentTensDigit > previousTensDigit) {
+                previousTensDigit = currentTensDigit;
+
+                // 15% chance to spawn a bonus button
+                if (Math.random() < 0.15) {
+                    createBonusButton();
+                }
+
+                // Adjust the difficulty (reduce click timeout)
                 clickTimeout = Math.max(200, clickTimeout * 0.85);
             }
+        }
+
+        function updateScore() {
+            scoreDisplay.textContent = `Score: ${score}`;
         }
 
         // Check if the player's score qualifies for top 10 before asking for their name
