@@ -199,39 +199,72 @@
             return bannedWords.some(bannedWord => lowerCaseName.includes(bannedWord.toLowerCase()));
         }
 
-        // Function to add a new high score
-        async function addHighScore(playerName, score) {
-            try {
-                const docRef = await db.collection("leaderboard").add({
-                    name: playerName,
-                    score: score,
-                    timestamp: new Date()
-                });
-                console.log("Document written with ID: ", docRef.id);
-                fetchHighScores();  // Refresh leaderboard after adding
-            } catch (e) {
-                console.error("Error adding document: ", e);
-            }
-        }
-
-        // Function to fetch top high scores
+        // Function to fetch top high scores, ensuring each name appears only once with the highest score
         async function fetchHighScores() {
             leaderboard.innerHTML = ''; // Clear current leaderboard
             const querySnapshot = await db.collection("leaderboard")
-                                         .orderBy("score", "desc")
-                                         .limit(10)
-                                         .get();
+                                        .orderBy("score", "desc")
+                                        .get(); // Get all scores
 
-            let scores = [];
+            let scores = {};
             querySnapshot.forEach((doc) => {
-                const score = doc.data();
-                scores.push({ name: score.name, score: score.score });
+                const data = doc.data();
+                const playerName = data.name;
+                const playerScore = data.score;
+
+                // Keep only the highest score for each player
+                if (!scores[playerName] || scores[playerName].score < playerScore) {
+                    scores[playerName] = { id: doc.id, name: playerName, score: playerScore };
+                }
             });
 
-            displayLeaderboard(scores);
+            // Convert the scores object to an array and sort it by score in descending order
+            let sortedScores = Object.values(scores).sort((a, b) => b.score - a.score);
+
+            // Take the top 10 scores and display them
+            displayLeaderboard(sortedScores.slice(0, 10));
         }
 
-        // Function to display leaderboard, showing only the top 3 by default
+        // Function to add or update a player's high score
+        async function addHighScore(playerName, score) {
+            try {
+                const querySnapshot = await db.collection("leaderboard")
+                                            .where("name", "==", playerName)
+                                            .get();
+
+                if (!querySnapshot.empty) {
+                    // If the player already exists, check if the new score is higher
+                    const existingDoc = querySnapshot.docs[0];
+                    const existingScore = existingDoc.data().score;
+                    if (score > existingScore) {
+                        // Update the player's score if the new one is higher
+                        await db.collection("leaderboard").doc(existingDoc.id).update({
+                            score: score,
+                            timestamp: new Date() // Update the timestamp
+                        });
+                        console.log(`Updated ${playerName}'s score to ${score}`);
+                    } else {
+                        console.log(`${playerName}'s score is not higher than the existing score`);
+                    }
+                } else {
+                    // If the player doesn't exist, add them to the leaderboard
+                    const docRef = await db.collection("leaderboard").add({
+                        name: playerName,
+                        score: score,
+                        timestamp: new Date()
+                    });
+                    console.log("Document written with ID: ", docRef.id);
+                }
+
+                // Refresh leaderboard after adding/updating
+                fetchHighScores();
+
+            } catch (e) {
+                console.error("Error adding/updating document: ", e);
+            }
+        }
+
+        // Function to display the leaderboard
         function displayLeaderboard(scores) {
             leaderboard.innerHTML = '';  // Clear the leaderboard
 
@@ -250,6 +283,7 @@
                 showMoreButton.style.display = 'none';
             }
         }
+
 
         // Toggle between showing more and less
         showMoreButton.addEventListener('click', () => {
@@ -406,6 +440,7 @@
         }
 
         // Check if the player's score qualifies for top 10 before asking for their name
+        // Check if the player's score qualifies for the top 10 before asking for their name
         async function endGame() {
             gameOver = true;
             gameOverDisplay.style.display = 'block';
@@ -421,19 +456,28 @@
                 return;
             }
 
+            // Fetch all leaderboard scores
             const querySnapshot = await db.collection("leaderboard")
                                         .orderBy("score", "desc")
-                                        .limit(10)
                                         .get();
 
-            let scores = [];
+            let scores = {};
             querySnapshot.forEach((doc) => {
-                const score = doc.data();
-                scores.push({ score: score.score });
+                const data = doc.data();
+                const playerName = data.name;
+                const playerScore = data.score;
+
+                // Keep only the highest score for each player
+                if (!scores[playerName] || scores[playerName].score < playerScore) {
+                    scores[playerName] = { id: doc.id, name: playerName, score: playerScore };
+                }
             });
 
-            // Determine if player's score qualifies for top 10
-            if (scores.length < 10 || score > scores[scores.length - 1].score) {
+            // Convert the scores object to an array and sort it by score in descending order
+            let sortedScores = Object.values(scores).sort((a, b) => b.score - a.score);
+
+            // Check if player's score qualifies for the new top 10
+            if (sortedScores.length < 10 || score > sortedScores[sortedScores.length - 1].score) {
                 let playerName;
                 do {
                     playerName = prompt("Enter your name:");
@@ -454,7 +498,6 @@
             }
             resetButton.style.display = 'block';
         }
-
 
         function resetGame() {
             score = 0;
